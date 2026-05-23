@@ -1,0 +1,39 @@
+# Android
+*.apk
+*.aab
+*.dex
+*.class
+*.ap_
+*.apks
+build/
+.gradle/
+local.properties
+*.iml
+.idea/
+
+# Flutter
+flutter_ui/.dart_tool/
+flutter_ui/.packages
+flutter_ui/build/
+flutter_ui/.flutter-plugins
+flutter_ui/.flutter-plugins-dependencies
+flutter_ui/pubspec.lock
+
+# Go
+bridge/bin/
+bridge/vendor/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Secrets
+*.keystore
+*.jks
+key.properties
+.env
