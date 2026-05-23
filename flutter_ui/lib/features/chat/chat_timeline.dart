@@ -222,12 +222,15 @@ class _ToolUseCard extends StatelessWidget {
           ),
           if (input.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(
-              const JsonEncoder.withIndent('  ').convert(input).substring(0, 200),
-              style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: cs.onSurfaceVariant),
-              maxLines: 5,
-              overflow: TextOverflow.ellipsis,
-            ),
+            Builder(builder: (_) {
+              final text = JsonEncoder.withIndent('  ').convert(input);
+              return Text(
+                text.length > 200 ? text.substring(0, 200) : text,
+                style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: cs.onSurfaceVariant),
+                maxLines: 5,
+                overflow: TextOverflow.ellipsis,
+              );
+            }),
           ],
         ],
       ),

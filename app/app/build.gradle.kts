@@ -37,4 +37,5 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("com.github.termux.termux-app:terminal-view:0.118.1")
     implementation("com.github.termux.termux-app:termux-shared:0.118.1")
+    implementation("com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava")
 }

@@ -48,7 +48,7 @@ class PermissionSheet extends StatelessWidget {
             ),
             child: SingleChildScrollView(
               child: Text(
-                const JsonEncoder.withIndent('  ').convert(input),
+                JsonEncoder.withIndent('  ').convert(input),
                 style: TextStyle(fontSize: 12, fontFamily: 'monospace', color: cs.onSurfaceVariant),
               ),
             ),
