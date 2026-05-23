@@ -1,5 +1,7 @@
 "use strict";
 
+const { listDir, readFile } = require("./files");
+
 function handleCommand(cmd, session, router) {
   switch (cmd.cmd) {
     case "send":
@@ -48,6 +50,23 @@ function handleCommand(cmd, session, router) {
       }
       session.resume(cmd.sessionId);
       break;
+
+    case "ls": {
+      const dir = cmd.path || session.cwd;
+      const tree = listDir(dir, cmd.depth || 3);
+      router.broadcast({ event: "file_tree", root: dir, tree });
+      break;
+    }
+
+    case "read_file": {
+      if (!cmd.path) {
+        router.broadcast({ event: "error", message: "read_file requires 'path'" });
+        return;
+      }
+      const result = readFile(cmd.path);
+      router.broadcast({ event: "file_content", path: cmd.path, ...result });
+      break;
+    }
 
     case "status":
       router.broadcast({

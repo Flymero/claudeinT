@@ -19,6 +19,8 @@ function parseEvent(obj) {
       for (const block of content) {
         if (block.type === "text") {
           events.push({ event: "text", content: block.text });
+        } else if (block.type === "thinking") {
+          events.push({ event: "thinking", content: block.thinking || "" });
         } else if (block.type === "tool_use") {
           events.push({
             event: "tool_use",

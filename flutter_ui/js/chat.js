@@ -2,8 +2,10 @@
 
 const Chat = {
   el: document.getElementById("chat"),
+  _streamEl: null,
 
   addMessage(type, content, extra) {
+    this._clearStream();
     const div = document.createElement("div");
     div.className = `msg msg-${type}`;
 
@@ -32,14 +34,59 @@ const Chat = {
       pre.textContent = text.slice(0, 2000);
       div.appendChild(pre);
     } else if (type === "thinking") {
-      div.textContent = content.slice(0, 200);
+      div.className = "msg msg-thinking";
+      const toggle = document.createElement("div");
+      toggle.className = "thinking-toggle";
+      toggle.textContent = "💭 Thinking...";
+      const body = document.createElement("div");
+      body.className = "thinking-body hidden";
+      body.textContent = content;
+      toggle.addEventListener("click", () => {
+        body.classList.toggle("hidden");
+        toggle.textContent = body.classList.contains("hidden")
+          ? "💭 Thinking..."
+          : "💭 Thinking ▾";
+      });
+      div.appendChild(toggle);
+      div.appendChild(body);
     } else {
       div.innerHTML = this._render(content);
       this._highlight(div);
     }
 
     this.el.appendChild(div);
-    this.el.scrollTop = this.el.scrollHeight;
+    this._scroll();
+  },
+
+  showLoading() {
+    this._clearStream();
+    const div = document.createElement("div");
+    div.className = "msg msg-assistant msg-loading";
+    div.id = "loading-indicator";
+    div.innerHTML = '<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>';
+    this.el.appendChild(div);
+    this._scroll();
+  },
+
+  hideLoading() {
+    const el = document.getElementById("loading-indicator");
+    if (el) el.remove();
+  },
+
+  streamText(content) {
+    this.hideLoading();
+    if (!this._streamEl) {
+      this._streamEl = document.createElement("div");
+      this._streamEl.className = "msg msg-assistant";
+      this.el.appendChild(this._streamEl);
+    }
+    this._streamEl.innerHTML = this._render(content);
+    this._highlight(this._streamEl);
+    this._scroll();
+  },
+
+  _clearStream() {
+    this._streamEl = null;
   },
 
   _render(text) {
@@ -56,18 +103,32 @@ const Chat = {
       });
     }
   },
+
+  _scroll() {
+    this.el.scrollTop = this.el.scrollHeight;
+  },
 };
 
 // Wire up events
 App.on("user_message", (msg) => {
   Chat.addMessage("user", msg);
+  Chat.showLoading();
 });
 
 App.on("text", (data) => {
-  Chat.addMessage("assistant", data.content);
+  Chat.hideLoading();
+  Chat.streamText(data.content);
+});
+
+App.on("thinking", (data) => {
+  Chat.hideLoading();
+  if (data.content) {
+    Chat.addMessage("thinking", data.content);
+  }
 });
 
 App.on("tool_use", (data) => {
+  Chat.hideLoading();
   if (data.tool === "Edit" || data.tool === "Write") return;
   Chat.addMessage("tool", null, { tool: data.tool, input: data.input });
 });
@@ -80,9 +141,11 @@ App.on("tool_result", (data) => {
 });
 
 App.on("done", (data) => {
+  Chat.hideLoading();
+  Chat._clearStream();
   const info = document.createElement("div");
-  info.className = "msg msg-thinking";
-  info.textContent = `Done — ${data.turns || 0} turns, $${(data.cost || 0).toFixed(4)}`;
+  info.className = "msg msg-done";
+  info.textContent = `✓ ${data.turns || 0} turns · $${(data.cost || 0).toFixed(4)}`;
   Chat.el.appendChild(info);
-  Chat.el.scrollTop = Chat.el.scrollHeight;
+  Chat._scroll();
 });
