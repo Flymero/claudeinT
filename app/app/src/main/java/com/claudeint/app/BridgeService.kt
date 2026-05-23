@@ -17,19 +17,86 @@ class BridgeService : Service() {
     }
 
     private var bridgeProcess: Process? = null
+    private var bootstrapThread: Thread? = null
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, buildNotification())
-        startBridge()
+        startForeground(NOTIFICATION_ID, buildNotification("Initializing..."))
+        bootstrapAndStart()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
         bridgeProcess?.destroy()
+        bootstrapThread?.interrupt()
         super.onDestroy()
+    }
+
+    private fun bootstrapAndStart() {
+        bootstrapThread = Thread {
+            try {
+                copyAssetsIfNeeded()
+                runBootstrap()
+                startBridge()
+                updateNotification("Bridge running")
+            } catch (e: Exception) {
+                e.printStackTrace()
+                updateNotification("Error: ${e.message}")
+            }
+        }.also { it.start() }
+    }
+
+    private fun copyAssetsIfNeeded() {
+        val bridgeDir = java.io.File(filesDir, "bridge/src")
+        if (bridgeDir.exists()) return
+
+        bridgeDir.mkdirs()
+        val bridgeFiles = listOf(
+            "bridge/package.json",
+            "bridge/src/index.js", "bridge/src/session.js",
+            "bridge/src/parser.js", "bridge/src/router.js",
+            "bridge/src/commands.js", "bridge/src/files.js"
+        )
+        for (path in bridgeFiles) {
+            val dest = java.io.File(filesDir, path)
+            dest.parentFile?.mkdirs()
+            assets.open("bridge/$path".removePrefix("bridge/")).use { input ->
+                dest.outputStream().use { output -> input.copyTo(output) }
+            }
+        }
+
+        // Install bridge dependencies
+        val npmBin = "${filesDir.absolutePath}/usr/bin/npm"
+        if (java.io.File(npmBin).exists()) {
+            ProcessBuilder(npmBin, "install", "--production")
+                .directory(java.io.File(filesDir, "bridge"))
+                .redirectErrorStream(true)
+                .start().waitFor()
+        }
+    }
+
+    private fun runBootstrap() {
+        val stamp = java.io.File(filesDir, ".bootstrapped")
+        val nodeBin = java.io.File(filesDir, "usr/bin/node")
+        if (stamp.exists() && nodeBin.exists()) return
+
+        val bootstrapScript = java.io.File(filesDir, "bootstrap.sh")
+        assets.open("bootstrap.sh").use { input ->
+            bootstrapScript.outputStream().use { output -> input.copyTo(output) }
+        }
+        bootstrapScript.setExecutable(true)
+
+        val env = arrayOf(
+            "CLAUDEINT_PREFIX=${filesDir.absolutePath}",
+            "HOME=${filesDir.absolutePath}",
+            "PATH=/system/bin:/system/xbin:${filesDir.absolutePath}/usr/bin"
+        )
+        Runtime.getRuntime().exec(
+            arrayOf("/system/bin/sh", bootstrapScript.absolutePath),
+            env, filesDir
+        ).waitFor()
     }
 
     private fun startBridge() {
@@ -63,11 +130,16 @@ class BridgeService : Service() {
         }
     }
 
-    private fun buildNotification(): Notification {
+    private fun buildNotification(text: String = "Bridge running"): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("ClaudeInT")
-            .setContentText("Bridge running")
+            .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .build()
+    }
+
+    private fun updateNotification(text: String) {
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.notify(NOTIFICATION_ID, buildNotification(text))
     }
 }

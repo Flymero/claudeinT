@@ -28,10 +28,14 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ hashFiles('app/**/*.gradle*', 'app/gradle/wrapper/gradle-wrapper.properties') }}
 
-      - name: Copy Web UI to assets
+      - name: Copy assets
         run: |
-          mkdir -p app/src/main/assets/web
-          cp -r flutter_ui/index.html flutter_ui/css flutter_ui/js app/src/main/assets/web/
+          mkdir -p app/app/src/main/assets/web
+          mkdir -p app/app/src/main/assets/bridge/src
+          cp -r flutter_ui/index.html flutter_ui/css flutter_ui/js app/app/src/main/assets/web/
+          cp bridge/package.json app/app/src/main/assets/bridge/
+          cp bridge/src/*.js app/app/src/main/assets/bridge/src/
+          cp scripts/bootstrap.sh app/app/src/main/assets/
 
       - name: Download Gradle Wrapper
         run: |
