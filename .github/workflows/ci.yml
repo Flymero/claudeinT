@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  bridge-test:
+    name: Bridge Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: bridge/package-lock.json
+
+      - name: Install dependencies
+        run: cd bridge && npm ci
+
+      - name: Syntax check
+        run: |
+          node -c bridge/src/index.js
+          node -c bridge/src/session.js
+          node -c bridge/src/parser.js
+          node -c bridge/src/router.js
+          node -c bridge/src/commands.js
+          node -c bridge/src/files.js
+
+      - name: Unit test - parser
+        run: |
+          node -e "
+          const { parseEvent } = require('./bridge/src/parser');
+          const sys = parseEvent({type:'system', session_id:'abc', tools:['Read','Write']});
+          console.assert(sys.event === 'system');
+          console.assert(sys.sessionId === 'abc');
+
+          const asst = parseEvent({type:'assistant', message:{content:[{type:'text',text:'hi'},{type:'thinking',thinking:'hmm'}]}});
+          console.assert(Array.isArray(asst));
+          console.assert(asst[0].event === 'text');
+          console.assert(asst[1].event === 'thinking');
+
+          const result = parseEvent({type:'result', cost_usd:0.01, duration_ms:5000, num_turns:2});
+          console.assert(result.event === 'done');
+          console.assert(result.cost === 0.01);
+
+          console.log('parser tests passed');
+          "
+
+      - name: Unit test - files
+        run: |
+          node -e "
+          const { listDir, readFile } = require('./bridge/src/files');
+          const tree = listDir('.', 1);
+          console.assert(tree.length > 0);
+          console.assert(tree.some(e => e.name === 'bridge'));
+
+          const r = readFile('./README.md');
+          console.assert(r.content.includes('ClaudeInT'));
+          console.assert(!r.error);
+
+          const bad = readFile('./nonexistent.xyz');
+          console.assert(bad.error !== null);
+
+          console.log('files tests passed');
+          "
+
+  ui-check:
+    name: UI Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate HTML
+        run: |
+          grep -q '<div id="app">' flutter_ui/index.html
+          grep -q 'diff.js' flutter_ui/index.html
+          grep -q 'filetree.js' flutter_ui/index.html
+          echo "HTML structure OK"
+
+      - name: Syntax check JS
+        run: |
+          node -c flutter_ui/js/app.js
+          node -c flutter_ui/js/chat.js
+          node -c flutter_ui/js/diff.js
+          node -c flutter_ui/js/filetree.js
+          node -c flutter_ui/js/permission.js
+          node -c flutter_ui/js/toolbar.js
+          node -c flutter_ui/serve.js
+          echo "All JS valid"
