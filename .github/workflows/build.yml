@@ -26,19 +26,24 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('app/**/*.gradle*', 'app/gradle-wrapper.properties') }}
+          key: gradle-${{ hashFiles('app/**/*.gradle*', 'app/gradle/wrapper/gradle-wrapper.properties') }}
+
+      - name: Copy Web UI to assets
+        run: |
+          mkdir -p app/src/main/assets/web
+          cp -r flutter_ui/index.html flutter_ui/css flutter_ui/js app/src/main/assets/web/
+
+      - name: Download Gradle Wrapper
+        run: |
+          cd app
+          mkdir -p gradle/wrapper
+          curl -sL "https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradle/wrapper/gradle-wrapper.jar" -o gradle/wrapper/gradle-wrapper.jar
 
       - name: Build APK
         run: |
-          if [ -f app/gradlew ]; then
-            cd app && chmod +x gradlew && ./gradlew assembleDebug
-          else
-            echo "::warning::No Termux fork in app/ yet. Skipping APK build."
-            exit 0
-          fi
+          cd app && chmod +x gradlew && ./gradlew assembleDebug
 
       - name: Upload APK
-        if: success() && hashFiles('app/app/build/outputs/apk/debug/*.apk') != ''
         uses: actions/upload-artifact@v4
         with:
           name: claudeint-debug
