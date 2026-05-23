@@ -1,0 +1,24 @@
+name: claudeint_ui
+description: ClaudeInT - Visual Claude Code mobile client
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  web_socket_channel: ^3.0.1
+  shared_preferences: ^2.5.3
+  flutter_markdown: ^0.7.7+1
+  flutter_local_notifications: ^19.4.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
