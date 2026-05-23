@@ -1,0 +1,17 @@
+{
+  "name": "claudeint-bridge",
+  "version": "0.1.0",
+  "description": "Bridge layer between Flutter UI and Claude Code CLI",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node test/smoke.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
