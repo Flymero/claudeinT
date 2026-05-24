@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'session_controller.dart';
+import 'connection_settings.dart';
 import '../chat/chat_timeline.dart';
 import '../files/file_drawer.dart';
 import '../permissions/permission_sheet.dart';
@@ -27,8 +29,30 @@ class _SessionHomePageState extends State<SessionHomePage> {
   @override
   void initState() {
     super.initState();
-    ctrl.connect();
+    _loadAndConnect();
     ctrl.addListener(_onStateChange);
+  }
+
+  Future<void> _loadAndConnect() async {
+    final prefs = await SharedPreferences.getInstance();
+    final url = prefs.getString('bridge_url') ?? 'ws://localhost:3100';
+    ctrl.connect(url: url);
+  }
+
+  void _showConnectionSettings() {
+    showModalBottomSheet(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (_) => ConnectionSettings(
+        currentUrl: ctrl.wsUrl,
+        onConnect: (url) => ctrl.connect(url: url),
+      ),
+    );
   }
 
   void _onStateChange() {
@@ -114,6 +138,10 @@ class _SessionHomePageState extends State<SessionHomePage> {
               icon: Icon(Icons.stop_circle_outlined, color: cs.error),
               onPressed: ctrl.abort,
             ),
+          IconButton(
+            icon: const Icon(Icons.settings_ethernet_outlined),
+            onPressed: _showConnectionSettings,
+          ),
           IconButton(
             icon: const Icon(Icons.brightness_6_outlined),
             onPressed: widget.onToggleTheme,

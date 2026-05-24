@@ -20,6 +20,7 @@ class SessionController extends ChangeNotifier {
 
   SessionState get state => _state;
   String? get sessionId => _sessionId;
+  String get wsUrl => _wsUrl;
   List<BridgeEvent> get events => List.unmodifiable(_events);
 
   String _wsUrl = 'ws://localhost:3100';

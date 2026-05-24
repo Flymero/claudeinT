@@ -32,13 +32,6 @@ jobs:
           name: claudeint-flutter-release
           path: flutter_ui/build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: flutter_ui/build/app/outputs/flutter-apk/app-release.apk
-          generate_release_notes: true
-
   webview-apk:
     name: WebView APK (fallback)
     runs-on: ubuntu-latest
